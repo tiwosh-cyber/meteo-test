@@ -247,3 +247,22 @@ Deux obligations applicables ne sont pas satisfaites : les mentions légales et 
 - `meteo-test.vercel.app` n'est **pas** ce projet (autre application, « weather-app », en anglais). L'URL de production réelle reste à relever dans Vercel → Domains.
 - **Smoke test de la preview, fait par l'humain le 15/11/2026, tout est conforme** : rechargement direct de `/weather` qui mène à la connexion (pas de 404) ; Visiteur : trois villes affichées ; Manager : enregistrement persistant après rechargement, puis valeur d'origine remise ; `/mentions-legales` affichée. Console : une seule violation CSP, `vercel.live/_next-live/feedback/feedback.js`, la barre d'outils Vercel injectée sur les previews pour les membres de l'équipe. Son blocage est voulu, la CSP n'est pas élargie ; l'humain peut désactiver la barre dans Vercel → Settings → General.
 - **GO production explicite de l'humain le 15/11/2026** : fusion en avance rapide de `phase-08-supabase` dans `main`, puis push, qui déclenche le déploiement de production Vercel.
+
+### Production (15/11/2026)
+
+- **URL** : https://meteo-test-cyan.vercel.app/. `main` est en `a685c2d` (fusion en avance rapide de `phase-08-supabase`). Statut Vercel : `success`.
+- **Smoke test par l'agent** (curl, depuis Windows) :
+  - HTTP redirige en 308 vers HTTPS ; HSTS actif (`max-age=63072000; includeSubDomains; preload`).
+  - En-têtes conformes à `vercel.json` : CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
+  - `/weather`, `/admin` et `/mentions-legales` répondent 200 (application à page unique, pas de 404 en accès direct).
+  - `/.env`, `/.env.local`, `/.git/config`, `/vercel.json` et `/package.json` ne servent que la page `index.html` : aucun fichier sensible n'est publié.
+  - `noindex` est présent.
+  - Le bundle contient l'URL du projet Supabase et aucune clé secrète ni identifiant de test.
+- **Parcours fonctionnel** : vérifié par l'humain sur la preview du même code applicatif (seule la doc diffère entre `0348c4b` et `a685c2d`), avec la même base Supabase. Le test navigateur automatisé n'a pas été rejoué en production, pour éviter d'écrire dans les données publiées.
+- **Reste à faire par l'humain** :
+  - Supabase : Authentication → URL Configuration → Site URL = l'URL de production (sans effet tant qu'aucun email n'est envoyé, mais à aligner) ;
+  - créer son propre compte Manager, puis supprimer les comptes de test (`meteo-visitor-…`, `meteo-manager-…`, `+signup…`) ;
+  - vérifier l'adresse et le téléphone de Vercel dans les mentions légales ;
+  - activer la MFA sur GitHub, Vercel et Supabase ;
+  - désactiver éventuellement la barre d'outils Vercel sur les previews.
+- **Statut de la phase 09** : publication effectuée et vérifiée. **Phase 09 validée par l'humain le 15/11/2026.** Mise à jour Notion demandée ; non effectuée par l'agent, car le connecteur Notion n'est pas authentifié. Retour arrière : Vercel → Deployments → Instant Rollback (le code seulement ; les données ne sont pas restaurées).
