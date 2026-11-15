@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5faff">
+  <title>METEO TEST — La météo en un coup d'œil</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="sun-fill" x2="0.8" y2="1"><stop stop-color="#ffde88"/><stop offset="1" stop-color="#ffbd52"/></linearGradient>
+      <linearGradient id="cloud-fill" x2="0.5" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dae8f5"/></linearGradient>
+    </defs>
+    <symbol id="sun" viewBox="0 0 160 160">
+      <g stroke="#f4bd57" stroke-width="4" stroke-linecap="round"><path d="M80 12v12m0 112v12M12 80h12m112 0h12M32 32l9 9m78 78 9 9M32 128l9-9m78-78 9-9"/></g>
+      <circle cx="80" cy="80" r="38" fill="url(#sun-fill)"/>
+    </symbol>
+    <symbol id="cloud" viewBox="0 0 160 160">
+      <circle cx="105" cy="53" r="28" fill="url(#sun-fill)"/>
+      <path d="M43 122a27 27 0 0 1-2-54 37 37 0 0 1 71-2 28 28 0 0 1 7 56Z" fill="url(#cloud-fill)" stroke="#cfdeec" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="drop" viewBox="0 0 24 24"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/></symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#meteo">Aller à la météo</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="#meteo" aria-label="METEO TEST, accueil">
+        <span class="logo-mark"><svg viewBox="0 0 160 160" aria-hidden="true"><use href="#sun"/></svg></span>
+        METEO<span class="logo-light">TEST</span>
+      </a>
+      <nav aria-label="Navigation principale">
+        <a class="nav-link active" href="#meteo" aria-current="page">Ma météo</a>
+        <a class="nav-link" href="#villes">Les villes</a>
+      </nav>
+      <button class="account-button" type="button" disabled title="Disponible dans une prochaine version">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+        Mon compte
+      </button>
+    </div>
+  </header>
+
+  <main id="meteo" class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow"><span></span> UN PEU PLUS PRÈS DU CIEL</p>
+      <h1 id="page-title">La météo en un coup d'œil<span class="title-dot">.</span></h1>
+      <p class="intro-copy">Le temps qu’il fait, simplement. Votre journée commence ici.</p>
+    </section>
+
+    <div class="weather-toolbar">
+      <p class="section-label">Votre météo du moment</p>
+      <div class="city-select">
+        <svg class="icon" aria-hidden="true"><use href="#pin"/></svg>
+        <label class="sr-only" for="city">Choisir une ville</label>
+        <select id="city"><option value="Paris">Paris</option><option value="Lyon">Lyon</option><option value="Marseille">Marseille</option></select>
+      </div>
+    </div>
+
+    <section class="weather-main" aria-label="Météo de la ville sélectionnée" aria-live="polite" aria-atomic="true">
+      <div class="weather-details">
+        <p class="location"><svg class="icon" aria-hidden="true"><use href="#pin"/></svg><span id="current-city">Paris</span><span class="country">France</span></p>
+        <p class="now">EN CE MOMENT</p>
+        <p class="temperature"><span id="current-temperature">22</span><span class="unit">°C</span></p>
+        <p class="condition" id="current-condition">Ensoleillé</p>
+        <div class="humidity"><svg class="icon" aria-hidden="true"><use href="#drop"/></svg><span>Humidité</span><strong id="current-humidity">45 %</strong></div>
+      </div>
+      <div class="weather-art" aria-hidden="true">
+        <div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div>
+        <svg class="main-weather-icon" viewBox="0 0 160 160"><use id="current-icon" href="#sun"/></svg>
+        <span class="art-caption">Un regard dehors, l’esprit léger.</span>
+      </div>
+      <div class="landscape" aria-hidden="true"></div>
+    </section>
+
+    <section id="villes" class="cities" aria-labelledby="cities-title">
+      <div class="section-heading"><h2 id="cities-title">Et ailleurs en France</h2><p>À chaque ville, son ciel.</p></div>
+      <div class="city-grid">
+        <button class="city-card" type="button" data-city="Paris" aria-pressed="true">
+          <span class="city-card-top"><span class="city-name">Paris<span class="city-region">Île-de-France</span></span><svg class="small-weather-icon" aria-hidden="true"><use href="#sun"/></svg></span>
+          <span class="city-card-weather"><span class="small-temperature">22<span> °C</span></span><span class="small-condition">Ensoleillé</span></span>
+          <span class="city-card-bottom"><span><svg class="icon" aria-hidden="true"><use href="#drop"/></svg>45 % d’humidité</span><svg class="icon card-arrow" aria-hidden="true"><use href="#arrow"/></svg></span>
+        </button>
+        <button class="city-card" type="button" data-city="Lyon" aria-pressed="false">
+          <span class="city-card-top"><span class="city-name">Lyon<span class="city-region">Auvergne-Rhône-Alpes</span></span><svg class="small-weather-icon" aria-hidden="true"><use href="#cloud"/></svg></span>
+          <span class="city-card-weather"><span class="small-temperature">18<span> °C</span></span><span class="small-condition">Nuageux</span></span>
+          <span class="city-card-bottom"><span><svg class="icon" aria-hidden="true"><use href="#drop"/></svg>60 % d’humidité</span><svg class="icon card-arrow" aria-hidden="true"><use href="#arrow"/></svg></span>
+        </button>
+        <button class="city-card" type="button" data-city="Marseille" aria-pressed="false">
+          <span class="city-card-top"><span class="city-name">Marseille<span class="city-region">Provence-Alpes-Côte d’Azur</span></span><svg class="small-weather-icon" aria-hidden="true"><use href="#sun"/></svg></span>
+          <span class="city-card-weather"><span class="small-temperature">26<span> °C</span></span><span class="small-condition">Ensoleillé</span></span>
+          <span class="city-card-bottom"><span><svg class="icon" aria-hidden="true"><use href="#drop"/></svg>35 % d’humidité</span><svg class="icon card-arrow" aria-hidden="true"><use href="#arrow"/></svg></span>
+        </button>
+      </div>
+    </section>
+    <footer><span>METEO TEST <span class="footer-separator">/</span> Le temps, en toute simplicité.</span><span class="preview-note">Aperçu design · Données fictives</span></footer>
+  </main>
+</body>
+</html>
