@@ -238,3 +238,12 @@ Deux obligations applicables ne sont pas satisfaites : les mentions légales et 
   - `npm run test:rls` : 6 réussis, 1 ignoré, 0 échec.
 - **Défaut de test corrigé** : `Page.reload` rend la main avant le rechargement, si bien que l'attente pouvait lire l'ancien DOM (échec intermittent). Le test attend désormais un nouveau document. Un échec intermittent laissait aussi Paris à -12,5 ; les valeurs de départ ont été restaurées par `test:rls`, puis vérifiées par une lecture en tant que Manager.
 - **Verdict mis à jour** : **GO AVEC RÉSERVES** pour une **preview** Vercel ; la production nécessite le smoke test de la preview et un GO humain explicite. Le projet Vercel est créé par l'humain ; aucun déploiement n'apparaît encore côté GitHub au moment du contrôle.
+
+### Preview Vercel (15/11/2026)
+
+- GO humain pour commit et push de la branche seulement. Commit `0348c4b`, push de `phase-08-supabase` (aucune action sur `main`).
+- Statut GitHub « Vercel » : `success` (build de la preview réussi).
+- La preview `meteo-test-git-phase-08-supabase-revostra-3586.vercel.app` redirige (302) vers la connexion Vercel (Deployment Protection) : elle n'est pas publique, ce qui est conforme à DEPLOYMENT règle 2. Smoke test automatisé **impossible sans accès** : à faire par l'humain dans son navigateur connecté, ou via un jeton de contournement.
+- `meteo-test.vercel.app` n'est **pas** ce projet (autre application, « weather-app », en anglais). L'URL de production réelle reste à relever dans Vercel → Domains.
+- **Smoke test de la preview, fait par l'humain le 15/11/2026, tout est conforme** : rechargement direct de `/weather` qui mène à la connexion (pas de 404) ; Visiteur : trois villes affichées ; Manager : enregistrement persistant après rechargement, puis valeur d'origine remise ; `/mentions-legales` affichée. Console : une seule violation CSP, `vercel.live/_next-live/feedback/feedback.js`, la barre d'outils Vercel injectée sur les previews pour les membres de l'équipe. Son blocage est voulu, la CSP n'est pas élargie ; l'humain peut désactiver la barre dans Vercel → Settings → General.
+- **GO production explicite de l'humain le 15/11/2026** : fusion en avance rapide de `phase-08-supabase` dans `main`, puis push, qui déclenche le déploiement de production Vercel.
