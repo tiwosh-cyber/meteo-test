@@ -334,3 +334,11 @@ form { display: grid; gap: var(--space-5); margin-top: var(--space-6); }
 @media (prefers-contrast: more) {
   :root { --color-muted: #334d66; --color-border: #8298ae; }
 }
+
+/* Phase 09 · legal page and links */
+footer a, .legal a, .legal-notice a { color: var(--color-blue); text-decoration: underline; text-underline-offset: 3px; }
+.legal h2 { margin: var(--space-6) 0 var(--space-3); }
+.legal h2:first-child { margin-top: 0; }
+.legal p { color: var(--color-muted); line-height: 1.7; margin: 0 0 var(--space-3); }
+.legal strong { color: var(--color-navy); }
+.legal-notice { margin: var(--space-4) 0 0; }

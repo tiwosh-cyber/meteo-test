@@ -6,8 +6,9 @@ import { supabase } from './supabase.js';
 import WeatherPage from './pages/WeatherPage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import LegalPage from './pages/LegalPage.jsx';
 
-const pageTitles = { '/weather': 'Météo', '/login': 'Connexion', '/register': 'Inscription', '/admin': 'Administration' };
+const pageTitles = { '/weather': 'Météo', '/login': 'Connexion', '/register': 'Inscription', '/admin': 'Administration', '/mentions-legales': 'Mentions légales et confidentialité' };
 
 export default function App() {
   const { pathname } = useLocation();
@@ -60,9 +61,10 @@ export default function App() {
         <Route path="/login" element={guestRoute(<AuthPage key="login" />)} />
         <Route path="/register" element={guestRoute(<AuthPage key="register" register />)} />
         <Route path="/admin" element={privateRoute(isManager === undefined ? loading : <AdminPage isManager={isManager} />)} />
+        <Route path="/mentions-legales" element={<LegalPage />} />
         <Route path="*" element={<Navigate to="/weather" replace />} />
       </Routes>
-      <footer><span>METEO TEST <span className="footer-separator">/</span> Le temps, en toute simplicité.</span></footer>
+      <footer><span>METEO TEST <span className="footer-separator">/</span> Le temps, en toute simplicité.</span><Link to="/mentions-legales">Mentions légales et confidentialité</Link></footer>
     </main>
   </>;
 }

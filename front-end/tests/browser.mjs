@@ -132,6 +132,13 @@ try {
     await click('.password-toggle');
     assert.equal(await evaluate(`document.querySelector('#password').type`), 'text');
   }
+  // Phase 09: public legal page (LCEN/GDPR), linked from the footer and the sign-up form.
+  assert.equal(await evaluate(`Boolean(document.querySelector('.legal-notice a[href="/mentions-legales"]'))`), true);
+  await click('footer a[href="/mentions-legales"]');
+  await waitFor(`location.pathname === '/mentions-legales' && Boolean(document.querySelector('.legal'))`, 'legal page');
+  await checkLayout('/mentions-legales');
+  assert.match(await evaluate(`document.querySelector('.legal').textContent`), /contact@kizzkiss\.com/);
+  assert.equal(await evaluate(`document.querySelector('meta[name="robots"]').content`), 'noindex, nofollow');
   // AC-004: wrong password refused, no session.
   await navigate('/login');
   await fill('#email', process.env.TEST_VISITOR_EMAIL);
@@ -180,8 +187,9 @@ try {
   assert.equal(await evaluate(`document.querySelector('#humidity').getAttribute('aria-invalid')`), 'true');
   assert.equal(await evaluate(`document.querySelectorAll('.admin-preview .temperature').length`), 0);
   await saveAdmin('-12.5', 'Orageux', '50');
+  await evaluate('window.__beforeReload = true'); // Page.reload returns early: wait for a new document
   await send('Page.reload');
-  await waitFor(`location.pathname === '/admin' && document.querySelector('#temperature')?.value === '-12.5'`, 'persisted after reload');
+  await waitFor(`!window.__beforeReload && location.pathname === '/admin' && document.querySelector('#temperature')?.value === '-12.5'`, 'persisted after reload');
   assert.equal(await evaluate(`document.querySelector('#condition').value`), 'Orageux');
   await navigate('/weather');
   await waitFor(`document.querySelector('.temperature > span')?.textContent === '-12.5'`, 'weather page shows saved value');

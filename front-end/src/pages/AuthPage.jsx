@@ -68,6 +68,7 @@ export default function AuthPage({ register = false }) {
         {feedback && <Message tone={feedback.tone}>{feedback.text}</Message>}
         <Button type="submit" loading={loading}>{register ? 'Créer mon compte' : 'Se connecter'}<Icon name="arrow" /></Button>
       </form>
+      {register && <p className="form-description legal-notice">Votre email sert uniquement à votre compte. <Link to="/mentions-legales">Mentions légales et confidentialité</Link></p>}
       <p className="auth-switch">{register ? 'Déjà un compte ?' : 'Pas encore de compte ?'} <Link to={register ? '/login' : '/register'}>{register ? 'Se connecter' : 'Créer un compte'}</Link></p>
     </section>
   </div>;
