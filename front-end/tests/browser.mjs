@@ -55,13 +55,16 @@ try {
     if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
     return response.result.value;
   }
-  async function navigate(path) {
-    await send('Page.navigate', { url: base + path });
-    for (let i = 0; i < 80; i++) {
-      if (await evaluate(`location.pathname === ${JSON.stringify(path)} && Boolean(document.querySelector('h1'))`)) return;
+  async function waitFor(expression, label) {
+    for (let i = 0; i < 100; i++) {
+      if (await evaluate(expression)) return;
       await sleep(100);
     }
-    throw new Error(`Route did not render: ${path}`);
+    throw new Error(`Timed out: ${label || expression}`);
+  }
+  async function navigate(path, expected = path) {
+    await send('Page.navigate', { url: base + path });
+    await waitFor(`location.pathname === ${JSON.stringify(expected)} && Boolean(document.querySelector('h1'))`, `route ${path} -> ${expected}`);
   }
   const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
   async function fill(selector, value) {
@@ -80,8 +83,10 @@ try {
   await send('Page.enable');
   await send('Runtime.enable');
 
-  for (const route of ['/weather', '/login', '/register', '/admin']) {
-    await navigate(route);
+  // Real Supabase TEST project + test accounts from front-end/.env.local (never committed).
+  for (const name of ['TEST_VISITOR_EMAIL', 'TEST_VISITOR_PASSWORD', 'TEST_MANAGER_EMAIL', 'TEST_MANAGER_PASSWORD']) assert.ok(process.env[name], `${name} manquant`);
+  const sessionKeys = `Object.keys(localStorage).filter(key => /^sb-.*-auth-token$/.test(key)).length`;
+  async function checkLayout(route) {
     assert.equal(await evaluate(`document.querySelectorAll('h1').length`), 1);
     assert.equal(await evaluate(`document.documentElement.lang`), 'fr');
     assert.equal(await evaluate(`Array.from(document.querySelectorAll('input, select')).every(e => e.labels.length > 0)`), true);
@@ -95,7 +100,57 @@ try {
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab' });
     assert.equal(await evaluate(`document.activeElement.matches(':focus-visible')`), true, `${route}: keyboard focus`);
   }
-  await navigate('/weather');
+  async function signIn(email, password) {
+    await navigate('/login');
+    await fill('#email', email);
+    await fill('#password', password);
+    await click('button[type="submit"]');
+    await waitFor(`location.pathname === '/weather' && Boolean(document.querySelector('.weather-main'))`, 'sign-in lands on /weather');
+  }
+  async function signOut() {
+    await click('.account-button');
+    await waitFor(`location.pathname === '/login' && Boolean(document.querySelector('h1'))`, 'sign-out lands on /login');
+  }
+  async function saveAdmin(temperature, condition, humidity) {
+    await fill('#temperature', temperature);
+    await select('#condition', condition);
+    await fill('#humidity', humidity);
+    await click('button[type="submit"]');
+    await waitFor(`Boolean(document.querySelector('form .message-success')?.textContent.includes('enregistrée'))`, 'save success');
+  }
+
+  // AC-008 (UI): protected routes redirect to /login without a session.
+  for (const route of ['/weather', '/admin']) await navigate(route, '/login');
+  for (const route of ['/login', '/register']) {
+    await navigate(route);
+    await checkLayout(route);
+    await click('button[type="submit"]');
+    assert.equal(await evaluate(`document.querySelectorAll('[aria-invalid="true"]').length`), 2);
+    assert.equal(await evaluate(`document.activeElement.id`), 'email');
+    await fill('#email', 'test@example.com');
+    await fill('#password', 'valid-password');
+    await click('.password-toggle');
+    assert.equal(await evaluate(`document.querySelector('#password').type`), 'text');
+  }
+  // AC-004: wrong password refused, no session.
+  await navigate('/login');
+  await fill('#email', process.env.TEST_VISITOR_EMAIL);
+  await fill('#password', 'wrong-password-123');
+  await click('button[type="submit"]');
+  await waitFor(`Boolean(document.querySelector('form .message-error')?.textContent.includes('incorrect'))`, 'invalid credentials message');
+  assert.equal(await evaluate('location.pathname'), '/login');
+  assert.equal(await evaluate(sessionKeys), 0);
+  // AC-002 (UI): duplicate email refused at sign-up, no session.
+  await navigate('/register');
+  await fill('#email', process.env.TEST_VISITOR_EMAIL);
+  await fill('#password', 'another-password-123');
+  await click('button[type="submit"]');
+  await waitFor(`Boolean(document.querySelector('form .message-error')?.textContent.includes('existe déjà'))`, 'duplicate email message');
+  assert.equal(await evaluate(sessionKeys), 0);
+
+  // AC-003/009/012: Visiteur reads the three cities, no admin access.
+  await signIn(process.env.TEST_VISITOR_EMAIL, process.env.TEST_VISITOR_PASSWORD);
+  await checkLayout('/weather');
   for (const [city, temperature, condition, humidity] of [['Paris', '22', 'Ensoleillé', '45 %'], ['Lyon', '18', 'Nuageux', '60 %'], ['Marseille', '26', 'Ensoleillé', '35 %']]) {
     await select('#city', city);
     assert.equal(await evaluate(`document.querySelector('.temperature > span').textContent`), temperature);
@@ -104,61 +159,47 @@ try {
   }
   await click('.city-card');
   assert.equal(await evaluate(`document.querySelector('#city').value`), 'Paris');
-  await click('.preview-states summary');
-  for (const status of ['loading', 'error', 'empty']) {
-    await select('#preview-state', status);
-    assert.equal(await evaluate(`Boolean(document.querySelector('.weather-state'))`), true);
-    assert.equal(await evaluate(`document.querySelectorAll('.weather-main .temperature').length`), 0);
-    if (status === 'loading') assert.equal(await evaluate(`document.querySelector('.weather-state').getAttribute('aria-busy')`), 'true');
-  }
-  await select('#preview-state', 'error');
-  await click('.weather-state button');
-  assert.equal(await evaluate(`Boolean(document.querySelector('.weather-main'))`), true);
-
-  for (const route of ['/login', '/register']) {
-    await navigate(route);
-    await click('button[type="submit"]');
-    assert.equal(await evaluate(`document.querySelectorAll('[aria-invalid="true"]').length`), 2);
-    assert.equal(await evaluate(`document.activeElement.id`), 'email');
-    await fill('#email', 'test@example.com');
-    await fill('#password', 'valid-password');
-    await click('.password-toggle');
-    assert.equal(await evaluate(`document.querySelector('#password').type`), 'text');
-    await click('button[type="submit"]');
-    assert.equal(await evaluate(`document.querySelectorAll('[aria-invalid="true"]').length`), 0);
-    assert.match(await evaluate(`document.querySelector('form .message').textContent`), /indisponible/);
-    assert.equal(await evaluate('location.pathname'), route);
-  }
-
+  assert.equal(await evaluate(`Boolean(document.querySelector('a[href="/admin"]'))`), false);
   await navigate('/admin');
-  assert.equal(await evaluate(`document.querySelector('.save-unavailable button').disabled`), true);
+  await waitFor(`Boolean(document.querySelector('.message-error'))`, 'admin refusal');
+  assert.match(await evaluate(`document.querySelector('.message-error').textContent`), /Accès refusé/);
+  assert.equal(await evaluate(`document.querySelectorAll('#temperature').length`), 0);
+  // AC-005: after sign-out, protected routes need a new sign-in.
+  await signOut();
+  assert.equal(await evaluate(sessionKeys), 0);
+  await navigate('/weather', '/login');
+
+  // AC-006/011/013/014: Manager saves, value persists after reload.
+  await signIn(process.env.TEST_MANAGER_EMAIL, process.env.TEST_MANAGER_PASSWORD);
+  await waitFor(`Boolean(document.querySelector('a[href="/admin"]'))`, 'admin link for Manager');
+  await click('a[href="/admin"]');
+  await waitFor(`Boolean(document.querySelector('#temperature'))`, 'admin editor');
+  await checkLayout('/admin');
   await fill('#humidity', '101');
   await click('button[type="submit"]');
   assert.equal(await evaluate(`document.querySelector('#humidity').getAttribute('aria-invalid')`), 'true');
   assert.equal(await evaluate(`document.querySelectorAll('.admin-preview .temperature').length`), 0);
-  await fill('#humidity', '50');
-  await fill('#temperature', '-12.5');
-  await select('#condition', 'Orageux');
-  assert.deepEqual(await evaluate(`['temperature','humidity','condition'].map(id => document.getElementById(id).value)`), ['-12.5', '50', 'Orageux']);
-  await click('button[type="submit"]');
-  assert.match(await evaluate(`document.querySelector('form .message').textContent`), /Aucune donnée n’a été enregistrée/);
-  assert.equal(await evaluate(`document.querySelector('.admin-preview .condition').textContent`), 'Orageux');
+  await saveAdmin('-12.5', 'Orageux', '50');
+  await send('Page.reload');
+  await waitFor(`location.pathname === '/admin' && document.querySelector('#temperature')?.value === '-12.5'`, 'persisted after reload');
+  assert.equal(await evaluate(`document.querySelector('#condition').value`), 'Orageux');
   await navigate('/weather');
-  assert.equal(await evaluate(`document.querySelector('.temperature > span').textContent`), '22');
+  await waitFor(`document.querySelector('.temperature > span')?.textContent === '-12.5'`, 'weather page shows saved value');
   await navigate('/admin');
-  assert.equal(await evaluate(`document.querySelector('#temperature').value`), '22');
+  await waitFor(`document.querySelector('#temperature')?.value === '-12.5'`, 'admin reload');
+  await saveAdmin('22', 'Ensoleillé', '45'); // restore seed
   await select('#admin-city', 'Lyon');
   assert.equal(await evaluate(`document.querySelector('#temperature').value`), '18');
   await fill('#humidity', '70');
   await click('.form-actions .button-secondary');
   assert.equal(await evaluate(`document.querySelector('#humidity').value`), '60');
-  await select('#admin-city', 'Marseille');
-  assert.equal(await evaluate(`document.querySelector('#temperature').value`), '26');
   await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   assert.equal(await evaluate(`getComputedStyle(document.querySelector('.button')).transitionDuration`), '0s');
-  assert.deepEqual(await evaluate('Object.keys(localStorage)'), []);
+  // Only the Supabase session token is stored client-side; never a role.
+  assert.deepEqual(await evaluate(`Object.keys(localStorage).filter(key => !/^sb-.*-auth-token$/.test(key))`), []);
+  await signOut();
   assert.deepEqual(errors, [], 'Browser console must stay clean');
-  console.log('PASS: 4 routes, 5 widths, labels, keyboard focus, cities, visual states, auth validation and non-persistent admin.');
+  console.log('PASS: guards, 4 routes x 5 widths, labels, focus, auth errors, Visiteur read/refusal, sign-out, Manager save + persistence after reload.');
   console.log(`Screenshots: ${artifacts}`);
 } finally {
   socket?.close();

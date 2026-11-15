@@ -1,5 +1,5 @@
 import { Icon } from './Icons.jsx';
-import { weatherPreview } from '../data/weather.js';
+import { cities } from '../data/weather.js';
 
 export function Button({ children, variant = 'primary', loading = false, disabled, type = 'button', ...props }) {
   return <button type={type} className={`button button-${variant}`} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
@@ -37,22 +37,9 @@ export function CitySelect({ value, onChange, id = 'city' }) {
   return <div className="city-select">
     <Icon name="pin" /><label className="sr-only" htmlFor={id}>Choisir une ville</label>
     <select id={id} value={value} onChange={event => onChange(event.target.value)}>
-      {weatherPreview.map(item => <option key={item.city}>{item.city}</option>)}
+      {cities.map(item => <option key={item.city}>{item.city}</option>)}
     </select>
   </div>;
-}
-
-// These are visual states, not simulated network requests or responses.
-export function PreviewStates({ value, onChange }) {
-  return <details className="preview-states">
-    <summary>Prévisualiser les états d’affichage</summary>
-    <label htmlFor="preview-state">État visuel de la météo</label>
-    <select id="preview-state" value={value} onChange={event => onChange(event.target.value)}>
-      <option value="ready">Données fictives</option><option value="loading">Chargement</option>
-      <option value="error">Erreur</option><option value="empty">Données absentes</option>
-    </select>
-    <p>Aperçus visuels uniquement : aucune requête n’est envoyée.</p>
-  </details>;
 }
 
 export function WeatherState({ status, onRetry }) {
@@ -64,6 +51,6 @@ export function WeatherState({ status, onRetry }) {
   return <section className="weather-state" aria-busy={status === 'loading'} aria-label={content[0]}>
     {status === 'loading' ? <span className="spinner" aria-hidden="true" /> : <Icon name={status === 'error' ? 'info' : 'cloud'} />}
     <div role={status === 'error' ? 'alert' : 'status'}><h2>{content[0]}</h2><p>{content[1]}</p></div>
-    {status === 'error' && onRetry && <Button variant="secondary" onClick={onRetry}>Revenir aux données fictives</Button>}
+    {status === 'error' && onRetry && <Button variant="secondary" onClick={onRetry}>Réessayer</Button>}
   </section>;
 }
